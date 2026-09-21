@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DriftWire — Detect API contract drift before your users do</title>
+<meta name="description" content="DriftWire is a free, zero-dependency CLI that detects API contract drift: validate your live API against its OpenAPI spec (spec-vs-reality), and catch breaking changes between spec versions. CI-friendly, MIT core.">
+<link rel="canonical" href="https://haswell119.github.io/driftwire/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="DriftWire — API contract drift detection for developers">
+<meta property="og:description" content="Spec-vs-reality drift checking and breaking-change detection in one zero-dependency CLI. Free MIT core, one-time Pro.">
+<meta property="og:url" content="https://haswell119.github.io/driftwire/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"DriftWire","operatingSystem":"Linux, macOS, Windows","applicationCategory":"DeveloperApplication","description":"Detect API contract drift: validate your live API against its OpenAPI spec, and catch breaking changes between spec versions.","offers":{"@type":"Offer","price":"29","priceCurrency":"USD","description":"DriftWire Pro (one-time)"},"author":{"@type":"Organization","name":"Meridian Digital"},"url":"https://haswell119.github.io/driftwire/"}
+</script>
+<style>
+  :root{--bg:#0b0f14;--panel:#111720;--border:#1f2937;--text:#e6edf3;--muted:#8b98a5;--accent:#58a6ff;--accent2:#3fb950;--warn:#f0883e}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+  .wrap{max-width:860px;margin:0 auto;padding:0 22px}
+  header{padding:64px 0 32px;border-bottom:1px solid var(--border)}
+  .logo{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .logo-mark{width:40px;height:40px;border-radius:9px;background:linear-gradient(135deg,#58a6ff,#3fb950);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:#0b0f14}
+  h1{font-size:34px;line-height:1.2;margin:0 0 12px;letter-spacing:-.5px}
+  .tagline{font-size:18px;color:var(--muted);max-width:640px;margin:0 0 24px}
+  .actions{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-block;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;border:1px solid transparent}
+  .btn-primary{background:var(--accent);color:#0b0f14}
+  .btn-ghost{border-color:var(--border);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--accent)}
+  code{background:#1b2430;padding:2px 6px;border-radius:5px;font-size:.92em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#c9d1d9}
+  pre{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:13.5px}
+  pre code{background:none;padding:0}
+  section{padding:40px 0;border-bottom:1px solid var(--border)}
+  h2{font-size:24px;margin:0 0 16px;letter-spacing:-.3px}
+  p{color:var(--muted);margin:0 0 16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px}
+  .card h3{margin:0 0 8px;font-size:17px}
+  .card p{margin:0;font-size:14.5px}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:10px}
+  .pill-free{background:rgba(63,185,80,.15);color:var(--accent2)}
+  .pill-pro{background:rgba(240,136,62,.15);color:var(--warn)}
+  .price{font-size:40px;font-weight:700;margin:8px 0 4px}
+  .price small{font-size:16px;color:var(--muted);font-weight:400}
+  footer{padding:32px 0 56px;color:var(--muted);font-size:14px}
+  footer a{color:var(--accent);text-decoration:none}
+  ul{color:var(--muted);padding-left:20px;margin:0 0 16px}
+  li{margin-bottom:6px}
+  .findings{color:#f85149;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="logo"><span class="logo-mark">⇄</span><span style="font-size:22px;font-weight:700">DriftWire</span></div>
+    <h1>Detect API contract drift before your users do.</h1>
+    <p class="tagline">A free, zero-dependency CLI that answers the two questions that silently break API integrations: does my live API still match my OpenAPI spec, and did I just introduce a breaking change?</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="https://github.com/Haswell119/driftwire">View on GitHub</a>
+      <a class="btn btn-ghost" href="https://driftwire.onrender.com/">Buy DriftWire Pro — $29</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>One CLI, two problems solved</h2>
+    <div class="grid">
+      <div class="card">
+        <span class="pill pill-free">FREE · MIT</span>
+        <h3><code>driftwire check</code> — spec vs. reality</h3>
+        <p>Probe your live API and validate every response against your OpenAPI spec. Flags type mismatches, undocumented fields, missing required fields, and enum violations. The one thing <code>oasdiff</code> explicitly cannot do.</p>
+      </div>
+      <div class="card">
+        <span class="pill pill-free">FREE · MIT</span>
+        <h3><code>driftwire diff</code> — spec vs. spec</h3>
+        <p>Compare two spec versions and surface the breaking changes: removed endpoints, fields, and parameters; newly-required fields; type changes; removed enum values.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Install</h2>
+    <pre><code>pip install git+https://github.com/Haswell119/driftwire.git
+# Python 3.9+. Only dependency: PyYAML.</code></pre>
+    <h2>Use it as a CI gate</h2>
+    <pre><code># catch breaking changes on every PR
+driftwire diff openapi@base.yaml openapi.yaml
+
+# or validate a deployed API against its spec
+driftwire check openapi.yaml --url https://api.example.com
+# exit 1 when drift is found — fails the build like any other check</code></pre>
+    <p>Also ships as a GitHub Action (<code>Haswell119/driftwire@main</code>) — drop it into <code>on: [pull_request]</code> and it gates merges automatically.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Pro — one-time $29</h2>
+    <p>The free core stays free, forever. Two features are licensed:</p>
+    <ul>
+      <li><strong>HTML reports</strong> — <code>--format html</code> renders a self-contained, severity-colored report you can attach to a PR.</li>
+      <li><strong><code>.driftwire.yml</code> waivers</strong> — record reviewed-and-justified exceptions so CI stays green on known drift while still blocking <em>new</em> drift. The workflow oasdiff sells for $100/mo.</li>
+    </ul>
+    <div class="card" style="display:inline-block;min-width:260px">
+      <span class="pill pill-pro">PRO</span>
+      <div class="price">$29 <small>one-time</small></div>
+      <p style="margin-bottom:14px">Verified offline — no phone-home, no subscription.</p>
+      <a class="btn btn-primary" href="https://driftwire.onrender.com/">Buy DriftWire Pro</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Why DriftWire</h2>
+    <p>Most API tooling does one half of the job or the other. DriftWire does both in a single, dependency-light CLI that runs locally and in CI — no uploads, no telemetry, no account. Your spec and your responses never leave your machine.</p>
+    <p>Built by <strong>Meridian Digital</strong>. MIT free core · <a href="https://github.com/Haswell119/driftwire">source on GitHub</a> · <a href="https://github.com/Haswell119/driftwire/releases">releases</a> · <a href="https://listedstartups.com/products/driftwire">listed on ListedStartups</a>.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>DriftWire is a developer tool by Meridian Digital. MIT licensed (free core). Pro features are licensed separately.</p>
+  </div>
+</footer>
+</body>
+</html>
