@@ -19,7 +19,8 @@ pip install .            # from this repo
 pip install git+https://github.com/Haswell119/driftwire.git
 ```
 
-Requires Python 3.9+. Only dependency: PyYAML (for YAML specs).
+Requires Python 3.9+. Only dependency: PyYAML (for YAML specs). The Pro license
+verification needs `cryptography` — `pip install driftwire[pro]`.
 
 ## Usage
 
@@ -44,7 +45,7 @@ probed 2 endpoint(s), skipped 0, errors 0
 ```
 
 Options: probe other methods with `--method POST --method PUT`, add auth headers with
-`--header "Authorization: Bearer x"`, fill path parameters with `--path-param id=42`.
+`--header "Authorization: Bearer ***"`, fill path parameters with `--path-param id=42`.
 Exit code 1 when drift is found (CI-friendly), 0 when clean.
 
 ### `diff` — breaking changes between two spec versions
@@ -69,7 +70,34 @@ silently break API consumers.
 
 Both commands accept `--json` for machine-readable results.
 
-## GitHub Actions
+## Pro — HTML reports & waiver config
+
+The free core (`check` + `diff`) is MIT and stays free. Two features are licensed:
+
+- **HTML reports** — `--format html` renders a self-contained, severity-colored report
+  you can attach to a PR or share with a reviewer.
+- **`.driftwire.yml` waivers** — `--config .driftwire.yml` records reviewed-and-justified
+  exceptions, so CI stays green on known drift while still blocking *new* drift (the
+  workflow oasdiff sells for $100/mo):
+
+```yaml
+waivers:
+  - type: type_mismatch
+    path: "GET /todos/1 -> /userId"
+    reason: "legacy field — JIRA-123, migrate in v3"
+```
+
+```bash
+driftwire diff old.yaml new.yaml --format html --config .driftwire.yml --license "$DRIFTWIRE_LICENSE"
+```
+
+A Pro license is a one-time purchase ([buy DriftWire Pro](https://driftwire.onrender.com/))
+and is verified **offline** — the CLI checks the signature locally, no phone-home. Set it
+once with `export DRIFTWIRE_LICENSE="dw1…"` or pass `--license` per run.
+
+## GitHub Action
+
+Use DriftWire as a CI gate (breaking-change check on every PR):
 
 ```yaml
 name: drift-check
@@ -79,18 +107,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - run: pip install "git+https://github.com/Haswell119/driftwire.git"
-      - run: driftwire diff $(git merge-base HEAD origin/main):openapi.yaml openapi.yaml --json
+      - uses: Haswell119/driftwire@main
+        with:
+          command: diff
+          old: ${{ github.event.pull_request.base.sha }}:openapi.yaml
+          new: openapi.yaml
 ```
 
-## Roadmap
+Or spec-vs-reality against a deployed API:
 
-Free today: `check` + `diff`, local and CI. Coming (paid, once built): HTML drift
-reports and a `.driftwire.yml` waiver/exception config so teams can approve known drift
-while still blocking new drift.
+```yaml
+      - uses: Haswell119/driftwire@main
+        with:
+          command: check
+          spec: openapi.yaml
+          url: https://staging.example.com
+          license: ${{ secrets.DRIFTWIRE_LICENSE }}   # for --config / HTML
+```
+
+The action exits non-zero when drift is found, so it fails the build like any other check.
 
 ## License
 
-MIT. Built by Meridian Digital.
+MIT for the free core. Pro features (HTML reports, `.driftwire.yml` waivers) require a
+paid license. Built by Meridian Digital.

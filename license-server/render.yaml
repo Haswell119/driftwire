@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: driftwire
+    runtime: python
+    rootDir: license-server
+    plan: free
+    region: frankfurt
+    startCommand: python server.py
+    healthCheckPath: /health

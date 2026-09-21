@@ -1,0 +1,58 @@
+name: "DriftWire — API contract drift check"
+description: "Detect API contract drift in CI: breaking changes between spec versions (diff) or spec-vs-reality drift (check)."
+author: "Meridian Digital"
+branding:
+  icon: "activity"
+  color: "blue"
+inputs:
+  command:
+    description: "DriftWire command: 'diff' (spec-vs-spec) or 'check' (spec-vs-reality)"
+    required: true
+    default: "diff"
+  spec:
+    description: "OpenAPI spec path (required for check)"
+    required: false
+  url:
+    description: "Live API base URL (required for check)"
+    required: false
+  old:
+    description: "Old spec path (required for diff)"
+    required: false
+  new:
+    description: "New spec path (required for diff)"
+    required: false
+  config:
+    description: "Path to .driftwire.yml waiver config (Pro)"
+    required: false
+  license:
+    description: "DriftWire Pro license key (needed for --config/--format html)"
+    required: false
+  extra_args:
+    description: "Extra CLI arguments passed through"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install DriftWire
+      shell: bash
+      run: pip install "git+https://github.com/Haswell119/driftwire.git"
+    - name: Run DriftWire
+      shell: bash
+      env:
+        DRIFTWIRE_LICENSE: ${{ inputs.license }}
+      run: |
+        set -e
+        if [ -n "${{ inputs.config }}" ]; then
+          CONFIG_ARGS="--config ${{ inputs.config }}"
+        else
+          CONFIG_ARGS=""
+        fi
+        if [ "${{ inputs.command }}" = "check" ]; then
+          driftwire check "${{ inputs.spec }}" --url "${{ inputs.url }}" --json $CONFIG_ARGS ${{ inputs.extra_args }}
+        else
+          driftwire diff "${{ inputs.old }}" "${{ inputs.new }}" --json $CONFIG_ARGS ${{ inputs.extra_args }}
+        fi

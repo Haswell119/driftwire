@@ -1,12 +1,15 @@
 [project]
 name = "driftwire"
-version = "0.1.0"
+version = "0.2.0"
 description = "Detect API contract drift: validate your live API against its OpenAPI spec, and catch breaking changes between spec versions."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Meridian Digital" }]
 dependencies = ["PyYAML>=6.0"]
+
+[project.optional-dependencies]
+pro = ["cryptography>=41"]
 keywords = ["openapi", "api", "contract-testing", "drift", "breaking-changes", "schema"]
 classifiers = [
     "Development Status :: 3 - Alpha",
