@@ -1,0 +1,41 @@
+openapi: 3.0.0
+info:
+  title: Smoke Test API
+  version: 1.0.0
+servers:
+  - url: https://jsonplaceholder.typicode.com
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, name]
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+  /todos/1:
+    get:
+      responses:
+        "200":
+          description: "A single todo (intentionally wrong: userId declared as string)"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, title]
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  userId:
+                    type: string
