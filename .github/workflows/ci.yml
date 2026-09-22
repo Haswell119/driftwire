@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install pytest "pyyaml>=6.0" "cryptography>=41"
+          pip install .
+      - name: Unit tests
+        run: pytest tests/ -v
+
+  action-self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate passes on a clean spec (no drift)
+        uses: ./
+        with:
+          command: diff
+          old: examples/old.yaml
+          new: examples/old.yaml
+      - name: Gate blocks a breaking change (expected exit 1)
+        uses: ./
+        continue-on-error: true
+        with:
+          command: diff
+          old: examples/old.yaml
+          new: examples/new.yaml

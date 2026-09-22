@@ -1,5 +1,7 @@
 # DriftWire
 
+[![CI](https://github.com/Haswell119/driftwire/actions/workflows/ci.yml/badge.svg)](https://github.com/Haswell119/driftwire/actions/workflows/ci.yml)
+
 Detect API contract drift before your users do.
 
 DriftWire answers the two questions that break API integrations:

@@ -52,7 +52,7 @@ runs:
           CONFIG_ARGS=""
         fi
         if [ "${{ inputs.command }}" = "check" ]; then
-          driftwire check "${{ inputs.spec }}" --url "${{ inputs.url }}" --json $CONFIG_ARGS ${{ inputs.extra_args }}
+          driftwire check "${{ inputs.spec }}" --url "${{ inputs.url }}" --format json $CONFIG_ARGS ${{ inputs.extra_args }}
         else
-          driftwire diff "${{ inputs.old }}" "${{ inputs.new }}" --json $CONFIG_ARGS ${{ inputs.extra_args }}
+          driftwire diff "${{ inputs.old }}" "${{ inputs.new }}" --format json $CONFIG_ARGS ${{ inputs.extra_args }}
         fi
