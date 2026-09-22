@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DriftWire — Live demo: detect breaking changes</title>
+<meta name="description" content="Try DriftWire in your browser: paste two OpenAPI spec versions and see every breaking change between them — removed endpoints, removed fields, newly-required fields, type changes.">
+<link rel="canonical" href="https://haswell119.github.io/driftwire/demo.html">
+<meta property="og:title" content="DriftWire — live breaking-change demo">
+<meta property="og:description" content="Paste two OpenAPI specs and see every breaking change between them.">
+<meta property="og:url" content="https://haswell119.github.io/driftwire/demo.html">
+<style>
+  :root{--bg:#0b0f14;--panel:#111720;--border:#1f2937;--text:#e6edf3;--muted:#8b98a5;--accent:#58a6ff;--accent2:#3fb950;--warn:#f0883e;--danger:#f85149}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 22px}
+  header{padding:40px 0 24px;border-bottom:1px solid var(--border)}
+  .logo{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .logo-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#58a6ff,#3fb950);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;color:#0b0f14}
+  h1{font-size:26px;line-height:1.2;margin:0 0 8px}
+  .tagline{color:var(--muted);margin:0}
+  a{color:var(--accent)}
+  section{padding:28px 0}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+  .col h3{font-size:15px;margin:0 0 8px;color:var(--muted);font-weight:600}
+  textarea{width:100%;height:280px;background:#0d1117;color:#c9d1d9;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5;resize:vertical}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .run{display:flex;align-items:center;gap:14px;margin:20px 0}
+  .btn{display:inline-block;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;border:1px solid transparent;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#0b0f14}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .hint{color:var(--muted);font-size:13px}
+  .results h2{font-size:18px;margin:0 0 12px}
+  .count-ok{color:var(--accent2);font-weight:700}
+  .count-bad{color:var(--danger);font-weight:700}
+  .finding{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:10px}
+  .finding.high{border-left-color:var(--danger)}
+  .finding .type{font-weight:700;font-size:13px;color:var(--warn)}
+  .finding.high .type{color:var(--danger)}
+  .finding .path{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:#c9d1d9;margin:2px 0}
+  .finding .msg{font-size:13px;color:var(--muted)}
+  .empty{color:var(--accent2);font-weight:600}
+  .error{color:var(--danger);background:rgba(248,81,73,.1);border:1px solid var(--danger);border-radius:8px;padding:12px 14px}
+  footer{padding:24px 0 48px;color:var(--muted);font-size:14px;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="logo"><span class="logo-mark">⇄</span><span style="font-size:20px;font-weight:700">DriftWire</span></div>
+    <h1>See every breaking change between two API spec versions</h1>
+    <p class="tagline">This is the exact <code>driftwire diff</code> engine, running live. Edit either spec and re-run — removed endpoints, removed fields, newly-required fields, and type changes are flagged instantly.</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="cols">
+      <div class="col">
+        <h3>OLD spec (v1)</h3>
+        <textarea id="old">openapi: 3.0.0
+info:
+  title: Users API
+  version: 1.0.0
+paths:
+  /users/{id}:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, name]
+                properties:
+                  id: {type: integer}
+                  name: {type: string}
+                  email: {type: string}
+  /users/{id}/posts:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {type: object}
+</textarea>
+      </div>
+      <div class="col">
+        <h3>NEW spec (v2)</h3>
+        <textarea id="new">openapi: 3.0.0
+info:
+  title: Users API
+  version: 2.0.0
+paths:
+  /users/{id}:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, name, email]
+                properties:
+                  id: {type: string}
+                  name: {type: string}
+</textarea>
+      </div>
+    </div>
+
+    <div class="run">
+      <button class="btn btn-primary" id="run">Detect breaking changes</button>
+      <span class="hint">No account, no upload — the two specs are diffed server-side and discarded.</span>
+    </div>
+
+    <div class="results" id="results"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Want this in CI? <a href="https://github.com/Haswell119/driftwire">Install the CLI</a> or use the <a href="https://github.com/Haswell119/driftwire">GitHub Action</a>. <a href="https://driftwire.onrender.com/">DriftWire Pro ($29 one-time)</a> adds HTML reports + <code>.driftwire.yml</code> waivers. <a href="index.html">← Back to DriftWire</a></p>
+  </div>
+</footer>
+
+<script>
+const API = "https://driftwire.onrender.com/api/demo";
+const runBtn = document.getElementById("run");
+const results = document.getElementById("results");
+
+function render(count, findings) {
+  if (!findings || findings.length === 0) {
+    results.innerHTML = '<h2><span class="count-ok">✓ No breaking changes</span></h2><p class="empty">The two specs are compatible — nothing broke.</p>';
+    return;
+  }
+  const high = new Set(["removed_endpoint","removed_method","removed_field","removed_response","removed_parameter","removed_enum","type_change"]);
+  const cls = count > 0 ? "count-bad" : "count-ok";
+  let html = '<h2><span class="' + cls + '">' + count + ' breaking change' + (count === 1 ? "" : "s") + ' found</span></h2>';
+  for (const f of findings) {
+    const isHigh = high.has(f.type);
+    html += '<div class="finding' + (isHigh ? ' high' : '') + '">'
+      + '<div class="type">' + f.type.replace(/_/g, ' ') + '</div>'
+      + '<div class="path">' + (f.path || '') + '</div>'
+      + '<div class="msg">' + (f.message || '') + '</div></div>';
+  }
+  results.innerHTML = html;
+}
+
+runBtn.addEventListener("click", async () => {
+  runBtn.disabled = true;
+  results.innerHTML = '<p class="hint">Running driftwire diff…</p>';
+  try {
+    const resp = await fetch(API, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({old: document.getElementById("old").value, new: document.getElementById("new").value})
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      results.innerHTML = '<div class="error">' + (data.error || ("HTTP " + resp.status)) + '</div>';
+    } else {
+      render(data.count, data.findings);
+    }
+  } catch (e) {
+    results.innerHTML = '<div class="error">Could not reach the demo server: ' + e.message + '</div>';
+  } finally {
+    runBtn.disabled = false;
+  }
+});
+
+// run once on load so the page demonstrates value immediately
+runBtn.click();
+</script>
+</body>
+</html>
