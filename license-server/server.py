@@ -133,7 +133,59 @@ class Handler(BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         if path == "/api/checkout":
             return self.handle_checkout(redirect=False)
+        if path == "/api/demo":
+            return self.handle_demo()
         return self._json(404, {"error": "not found"})
+
+    # ---------- Free live demo: spec-vs-spec breaking-change detection ----------
+    # `diff` reads two user-pasted specs and performs NO network I/O, so there is no
+    # SSRF surface. External $refs are rejected (internal #/… refs only) to keep the
+    # server from reading anything the caller didn't paste.
+
+    _MAX_DEMO_BYTES = 200_000
+
+    def handle_demo(self):
+        length = int(self.headers.get("Content-Length") or 0)
+        raw = self.rfile.read(length) if length > 0 else b""
+        if len(raw) > self._MAX_DEMO_BYTES * 2 + 4096:
+            return self._json(413, {"error": "request too large"})
+        try:
+            data = json.loads(raw.decode("utf-8"))
+        except Exception:
+            return self._json(400, {"error": "invalid JSON body"})
+        old_txt = data.get("old") or ""
+        new_txt = data.get("new") or ""
+        if not old_txt.strip() or not new_txt.strip():
+            return self._json(400, {"error": "both 'old' and 'new' spec text are required"})
+        if len(old_txt) > self._MAX_DEMO_BYTES or len(new_txt) > self._MAX_DEMO_BYTES:
+            return self._json(413, {"error": "spec too large (max 200KB each)"})
+        try:
+            from driftwire import diff, spec_loader
+            old = spec_loader.parse_spec(old_txt, "<old>")
+            new = spec_loader.parse_spec(new_txt, "<new>")
+        except Exception as e:  # noqa: BLE001
+            return self._json(422, {"error": "spec parse error: %s" % e})
+        if self._has_external_ref(old) or self._has_external_ref(new):
+            return self._json(422, {"error": "external $refs are not allowed in the demo (internal #/… only)"})
+        try:
+            findings = diff.diff_specs(old, new)
+        except Exception as e:  # noqa: BLE001
+            return self._json(422, {"error": "diff error: %s" % e})
+        return self._json(200, {"count": len(findings), "findings": findings})
+
+    @staticmethod
+    def _has_external_ref(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "$ref" and isinstance(value, str) and not value.startswith("#"):
+                    return True
+                if Handler._has_external_ref(value):
+                    return True
+        elif isinstance(node, list):
+            for item in node:
+                if Handler._has_external_ref(item):
+                    return True
+        return False
 
     def handle_index(self):
         body = f"""
