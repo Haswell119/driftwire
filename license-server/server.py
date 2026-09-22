@@ -129,6 +129,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True})
         return self._send(404, "not found", "text/plain")
 
+    def do_OPTIONS(self):
+        # CORS preflight for cross-origin fetch() (e.g. the github.io live demo).
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_POST(self):
         path = urllib.parse.urlparse(self.path).path
         if path == "/api/checkout":
