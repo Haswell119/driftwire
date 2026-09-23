@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Drift Detection — Is Your Live API Still Matching Its Spec? — DriftWire</title>
+<meta name="description" content="Spec drift: your API docs say one thing, your live API returns another. DriftWire's driftwire check probes live endpoints and validates responses against your OpenAPI spec — the check oasdiff can't do.">
+<link rel="canonical" href="https://haswell119.github.io/driftwire/api-drift-detection.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="API Drift Detection — Spec vs. Reality">
+<meta property="og:description" content="Validate your live API against its OpenAPI spec. Catch type mismatches, undocumented fields, and enum violations automatically.">
+<meta property="og:url" content="https://haswell119.github.io/driftwire/api-drift-detection.html">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"What is API drift (spec drift)?","acceptedAnswer":{"@type":"Answer","text":"The gap that grows between what your OpenAPI spec documents and what your live API actually returns. It happens when code changes aren't reflected in the spec."}},
+    {"@type":"Question","name":"How do I detect spec drift?","acceptedAnswer":{"@type":"Answer","text":"Probe your live endpoints and validate each response against the spec. DriftWire's `driftwire check openapi.yaml --url https://api.example.com` does this and flags mismatches."}},
+    {"@type":"Question","name":"Why doesn't oasdiff do this?","acceptedAnswer":{"@type":"Answer","text":"oasdiff requires two spec files — it cannot tell you whether your live API matches your spec. Spec-vs-reality checking is DriftWire's differentiator."}}
+  ]
+}
+</script>
+<style>
+  :root{--bg:#0b0f14;--panel:#111720;--border:#1f2937;--text:#e6edf3;--muted:#8b98a5;--accent:#58a6ff;--accent2:#3fb950;--warn:#f0883e}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .wrap{max-width:760px;margin:0 auto;padding:0 22px}
+  header{padding:56px 0 28px;border-bottom:1px solid var(--border)}
+  header a{color:var(--accent);text-decoration:none;font-size:14px}
+  h1{font-size:30px;line-height:1.25;margin:16px 0 12px;letter-spacing:-.5px}
+  h2{font-size:22px;margin:40px 0 14px;letter-spacing:-.3px}
+  p{color:var(--muted);margin:0 0 16px}
+  .lead{font-size:17px;color:var(--text)}
+  code{background:#1b2430;padding:2px 6px;border-radius:5px;font-size:.9em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#c9d1d9}
+  pre{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:13.5px;margin:0 0 16px}
+  pre code{background:none;padding:0}
+  ul,ol{color:var(--muted);padding-left:22px;margin:0 0 16px}
+  li{margin-bottom:8px}
+  .btn{display:inline-block;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;border:1px solid transparent;margin-right:10px}
+  .btn-primary{background:var(--accent);color:#0b0f14}
+  .btn-ghost{border-color:var(--border);color:var(--text)}
+  .cta{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px;margin:32px 0}
+  footer{padding:36px 0 60px;color:var(--muted);font-size:14px;border-top:1px solid var(--border);margin-top:24px}
+  footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="./">← DriftWire home</a>
+    <h1>Is your live API still matching your spec?</h1>
+    <p class="lead">Spec drift is the gap that grows between what your OpenAPI spec <em>documents</em> and what your API <em>actually returns</em>. It's the single biggest source of integration bugs — and almost nobody checks for it.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <h2>What spec drift looks like</h2>
+  <ul>
+    <li>A field is renamed in code but the spec still lists the old name — clients read the wrong key.</li>
+    <li>An endpoint starts returning a field that isn't in the spec — generated clients drop it.</li>
+    <li>A value type changes (<code>string</code> → <code>integer</code>) and only the consumers notice.</li>
+    <li>A documented enum gains or loses values without a spec update.</li>
+  </ul>
+
+  <h2>Why spec-vs-spec tools miss it</h2>
+  <p>Most drift tooling — including the popular <code>oasdiff</code> — compares <em>two spec files</em>. They explicitly cannot tell you whether your live API matches your spec, because they never touch a running endpoint. That's the gap DriftWire fills.</p>
+
+  <h2>Check spec vs. reality in one command</h2>
+  <pre><code># probe live endpoints and validate every response against the spec
+driftwire check openapi.yaml --url https://api.example.com
+# reports type mismatches, undocumented fields, missing required,
+# and enum violations — exit 1 when drift is found</code></pre>
+  <p>Run it locally during development, or as a CI step that gates deploys the same way unit tests do. No uploads, no telemetry, no account — responses never leave your machine.</p>
+
+  <div class="cta">
+    <h2 style="margin-top:0">Try it right now</h2>
+    <p>Paste two specs into the live demo and watch the diff engine flag breaking changes instantly:</p>
+    <a class="btn btn-primary" href="demo.html">▶ Open the live demo</a>
+    <a class="btn btn-ghost" href="https://github.com/Haswell119/driftwire">View source (MIT)</a>
+  </div>
+
+  <p>Related: <a href="openapi-breaking-changes.html">Detect breaking changes in your OpenAPI spec</a>.</p>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>DriftWire is a developer tool by Meridian Digital. MIT free core; Pro is a one-time $29 (<a href="https://driftwire.onrender.com/">buy</a>).</p>
+  </div>
+</footer>
+</body>
+</html>

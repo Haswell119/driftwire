@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detect Breaking Changes in Your OpenAPI Spec — DriftWire</title>
+<meta name="description" content="Breaking API changes silently break integrations. Learn what counts as a breaking change in OpenAPI, why they slip through code review, and how to detect them automatically in CI with DriftWire's free spec-vs-spec diff.">
+<link rel="canonical" href="https://haswell119.github.io/driftwire/openapi-breaking-changes.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Detect Breaking Changes in Your OpenAPI Spec">
+<meta property="og:description" content="Removed endpoints, newly-required fields, type changes — catch them automatically before they reach production.">
+<meta property="og:url" content="https://haswell119.github.io/driftwire/openapi-breaking-changes.html">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"What counts as a breaking change in an OpenAPI spec?","acceptedAnswer":{"@type":"Answer","text":"Anything that breaks an existing client: removing an endpoint, field, parameter, or enum value; adding a required field; changing a field's type or format; changing an HTTP method or response code."}},
+    {"@type":"Question","name":"How do I detect breaking changes automatically?","acceptedAnswer":{"@type":"Answer","text":"Diff your two OpenAPI specs. DriftWire's `driftwire diff old.yaml new.yaml` compares spec versions and reports every breaking change, exiting non-zero so it fails a CI build."}},
+    {"@type":"Question","name":"Is DriftWire free?","acceptedAnswer":{"@type":"Answer","text":"The MIT free core (check + diff) is free forever. Pro is a one-time $29 for HTML reports and .driftwire.yml waiver config."}}
+  ]
+}
+</script>
+<style>
+  :root{--bg:#0b0f14;--panel:#111720;--border:#1f2937;--text:#e6edf3;--muted:#8b98a5;--accent:#58a6ff;--accent2:#3fb950;--warn:#f0883e}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .wrap{max-width:760px;margin:0 auto;padding:0 22px}
+  header{padding:56px 0 28px;border-bottom:1px solid var(--border)}
+  header a{color:var(--accent);text-decoration:none;font-size:14px}
+  h1{font-size:30px;line-height:1.25;margin:16px 0 12px;letter-spacing:-.5px}
+  h2{font-size:22px;margin:40px 0 14px;letter-spacing:-.3px}
+  p{color:var(--muted);margin:0 0 16px}
+  .lead{font-size:17px;color:var(--text)}
+  code{background:#1b2430;padding:2px 6px;border-radius:5px;font-size:.9em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#c9d1d9}
+  pre{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:13.5px;margin:0 0 16px}
+  pre code{background:none;padding:0}
+  ul,ol{color:var(--muted);padding-left:22px;margin:0 0 16px}
+  li{margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;margin:0 0 20px;font-size:14.5px}
+  th,td{border:1px solid var(--border);padding:9px 12px;text-align:left;color:var(--muted)}
+  th{background:var(--panel);color:var(--text)}
+  .btn{display:inline-block;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;border:1px solid transparent;margin-right:10px}
+  .btn-primary{background:var(--accent);color:#0b0f14}
+  .btn-ghost{border-color:var(--border);color:var(--text)}
+  .cta{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px;margin:32px 0}
+  footer{padding:36px 0 60px;color:var(--muted);font-size:14px;border-top:1px solid var(--border);margin-top:24px}
+  footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="./">← DriftWire home</a>
+    <h1>Detect breaking changes in your OpenAPI spec before they reach production.</h1>
+    <p class="lead">A breaking change is any API change that breaks an existing client. They're easy to introduce and easy to miss in review — and they're exactly what <code>driftwire diff</code> catches automatically.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <h2>What counts as a breaking change</h2>
+  <p>OpenAPI doesn't flag breaking changes for you — a diff tool must. The changes that break real clients:</p>
+  <table>
+    <tr><th>Change</th><th>Why it breaks clients</th></tr>
+    <tr><td>Removed endpoint or HTTP method</td><td>Calls start returning 404/405.</td></tr>
+    <tr><td>Removed field / parameter / enum value</td><td>Request or response payloads change shape.</td></tr>
+    <tr><td>Added a <code>required</code> field</td><td>Existing requests are rejected as invalid.</td></tr>
+    <tr><td>Changed a field's type or format</td><td>Client deserialization fails silently.</td></tr>
+    <tr><td>Removed or narrowed a response code</td><td>Client error handling paths break.</td></tr>
+  </table>
+
+  <h2>Why they slip through review</h2>
+  <p>Spec diffs are dense and easy to misread by eye. A single renamed enum value or a <code>required</code> added deep in a nested schema is invisible in a normal PR. Teams that catch these manually usually catch them after a customer reports the outage.</p>
+
+  <h2>Detect them automatically in CI</h2>
+  <pre><code># compare two spec versions and fail on any breaking change
+driftwire diff openapi@v1.yaml openapi@v2.yaml
+# exit 1 when a breaking change is found — blocks the merge</code></pre>
+  <p>It also runs as a GitHub Action (<code>Haswell119/driftwire@main</code>): drop it into <code>on: [pull_request]</code> and every spec change is gated automatically.</p>
+
+  <div class="cta">
+    <h2 style="margin-top:0">Try it right now</h2>
+    <p>Paste two OpenAPI specs into the live demo and see every breaking change, severity-colored:</p>
+    <a class="btn btn-primary" href="demo.html">▶ Open the live demo</a>
+    <a class="btn btn-ghost" href="https://github.com/Haswell119/driftwire">View source (MIT)</a>
+  </div>
+
+  <p>Related: <a href="api-drift-detection.html">API drift detection — is your live API still matching its spec?</a></p>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>DriftWire is a developer tool by Meridian Digital. MIT free core; Pro is a one-time $29 (<a href="https://driftwire.onrender.com/">buy</a>).</p>
+  </div>
+</footer>
+</body>
+</html>
