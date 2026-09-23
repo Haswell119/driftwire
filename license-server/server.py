@@ -29,6 +29,63 @@ APP_URL = os.environ.get("APP_URL", "http://localhost:8080").rstrip("/")
 LICENSE_TTL_DAYS = 365 * 20  # lifetime-ish; exp is checked by the CLI
 
 
+# ---------- Spec-vs-REALITY demo (the non-commodity wedge) ----------
+# The `check` engine probes a LIVE API and validates the responses against the
+# OpenAPI spec. This bundled spec describes the mock API below *as it should be*;
+# the mock deliberately serves drifted reality so the demo shows real findings.
+# No user input reaches the URL: base_url is hardcoded to localhost, so there is
+# no SSRF surface and nothing external is ever contacted.
+
+DEMO_SPEC = {
+    "openapi": "3.0.0",
+    "info": {"title": "Demo Users API", "version": "1.0.0"},
+    "paths": {
+        "/demoapi/users/{id}": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["id", "name", "role"],
+                                    "properties": {
+                                        "id": {"type": "integer"},
+                                        "name": {"type": "string"},
+                                        "role": {"type": "string", "enum": ["user", "admin"]},
+                                    },
+                                    "additionalProperties": False,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/demoapi/status": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["status", "uptime"],
+                                    "properties": {
+                                        "status": {"type": "string", "enum": ["ok", "degraded"]},
+                                        "uptime": {"type": "integer"},
+                                    },
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    },
+}
+
+
 # ---------- Ed25519 signing (cryptography) ----------
 
 def _load_private_key():
@@ -127,6 +184,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.handle_redeem()
         if path == "/health":
             return self._json(200, {"ok": True})
+        if path.startswith("/demoapi/"):
+            return self.handle_mock()
         return self._send(404, "not found", "text/plain")
 
     def do_OPTIONS(self):
@@ -145,6 +204,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.handle_checkout(redirect=False)
         if path == "/api/demo":
             return self.handle_demo()
+        if path == "/api/demo-check":
+            return self.handle_demo_check()
         return self._json(404, {"error": "not found"})
 
     # ---------- Free live demo: spec-vs-spec breaking-change detection ----------
@@ -182,6 +243,44 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:  # noqa: BLE001
             return self._json(422, {"error": "diff error: %s" % e})
         return self._json(200, {"count": len(findings), "findings": findings})
+
+    # ---------- Free live demo: spec-vs-REALITY drift (the non-commodity wedge) ----------
+    # `check` is what oasdiff/api2spec can't do: probe the DEPLOYED API and validate
+    # responses against the spec. Here the "deployed API" is a bundled mock served by
+    # THIS process (see /demoapi/*), so there is zero network egress and zero SSRF —
+    # base_url is fixed to 127.0.0.1 and the spec/path-params are constants.
+
+    def handle_mock(self):
+        path = urllib.parse.urlparse(self.path).path
+        if path.startswith("/demoapi/users/"):
+            # Spec says: id=integer, name=string, role∈{user,admin}, no extra fields.
+            body = {"id": "42", "name": 123, "role": "superadmin", "extraField": True}
+        elif path == "/demoapi/status":
+            # Spec says: status∈{ok,degraded}, uptime=integer.
+            body = {"status": "down", "uptime": "two days"}
+        else:
+            return self._json(404, {"error": "not found"})
+        return self._json(200, body)
+
+    def handle_demo_check(self):
+        try:
+            from driftwire import check
+        except Exception as e:  # noqa: BLE001
+            return self._json(500, {"error": "check engine unavailable: %s" % e})
+        port = self.server.server_port
+        base_url = "http://127.0.0.1:%d" % port
+        try:
+            result = check.check_spec(DEMO_SPEC, base_url, path_params={"id": "42"},
+                                      timeout=5.0)
+        except Exception as e:  # noqa: BLE001
+            return self._json(500, {"error": "check error: %s" % e})
+        return self._json(200, {
+            "count": len(result["findings"]),
+            "endpoints": result["endpoints"],
+            "probed": result["probed"],
+            "skipped": result["skipped"],
+            "findings": result["findings"],
+        })
 
     @staticmethod
     def _has_external_ref(node):
