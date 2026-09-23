@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DriftWire — Live demo: spec vs. your real API</title>
+<meta name="description" content="The half no spec-diff tool can do: DriftWire probes a live API and validates every response against your OpenAPI spec — catching type mismatches, enum violations, and undocumented fields that oasdiff can't see.">
+<link rel="canonical" href="https://haswell119.github.io/driftwire/demo-check.html">
+<meta property="og:title" content="DriftWire — live spec-vs-reality demo">
+<meta property="og:description" content="Point DriftWire at a live API and its OpenAPI spec: it catches drift no spec-diff tool can see.">
+<meta property="og:url" content="https://haswell119.github.io/driftwire/demo-check.html">
+<style>
+  :root{--bg:#0b0f14;--panel:#111720;--border:#1f2937;--text:#e6edf3;--muted:#8b98a5;--accent:#58a6ff;--accent2:#3fb950;--warn:#f0883e;--danger:#f85149}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 22px}
+  header{padding:40px 0 24px;border-bottom:1px solid var(--border)}
+  .logo{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .logo-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#58a6ff,#3fb950);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;color:#0b0f14}
+  h1{font-size:26px;line-height:1.2;margin:0 0 8px}
+  .tagline{color:var(--muted);margin:0}
+  code{background:#0d1117;border:1px solid var(--border);border-radius:4px;padding:.1rem .35rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em}
+  a{color:var(--accent)}
+  section{padding:28px 0}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+  .col h3{font-size:15px;margin:0 0 8px;color:var(--muted);font-weight:600}
+  pre{background:#0d1117;color:#c9d1d9;border:1px solid var(--border);border-radius:10px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;overflow-x:auto;margin:0}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle}
+  .badge-spec{background:rgba(88,166,255,.15);color:var(--accent)}
+  .badge-real{background:rgba(248,81,73,.15);color:var(--danger)}
+  .run{display:flex;align-items:center;gap:14px;margin:20px 0}
+  .btn{display:inline-block;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;border:1px solid transparent;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#0b0f14}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .hint{color:var(--muted);font-size:13px}
+  .results h2{font-size:18px;margin:0 0 12px}
+  .count-bad{color:var(--danger);font-weight:700}
+  .count-ok{color:var(--accent2);font-weight:700}
+  .finding{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:10px}
+  .finding.high{border-left-color:var(--danger)}
+  .finding .type{font-weight:700;font-size:13px;color:var(--warn)}
+  .finding.high .type{color:var(--danger)}
+  .finding .path{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:#c9d1d9;margin:2px 0}
+  .finding .msg{font-size:13px;color:var(--muted)}
+  .error{color:var(--danger);background:rgba(248,81,73,.1);border:1px solid var(--danger);border-radius:8px;padding:12px 14px}
+  .why{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-top:8px}
+  .why p{margin:0 0 8px;font-size:14px}
+  footer{padding:24px 0 48px;color:var(--muted);font-size:14px;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="logo"><span class="logo-mark">⇄</span><span style="font-size:20px;font-weight:700">DriftWire</span></div>
+    <h1>Spec vs. your real API — the half no spec-diff tool can do</h1>
+    <p class="tagline"><code>oasdiff</code> and <code>api2spec</code> only diff two specs (or code vs. spec). DriftWire's <code>check</code> probes a <b>live API</b> and validates every response against your OpenAPI spec — catching type mismatches, enum violations and undocumented fields the moment your deployed server drifts. This is the exact <code>driftwire check</code> engine, running against a demo API served alongside this page.</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="cols">
+      <div class="col">
+        <h3>YOUR SPEC — what the API promises<span class="badge badge-spec">contract</span></h3>
+        <pre>openapi: 3.0.0
+info: {title: Demo Users API, version: 1.0.0}
+paths:
+  /demoapi/users/{id}:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, name, role]
+                properties:
+                  id:   {type: integer}
+                  name: {type: string}
+                  role: {type: string, enum: [user, admin]}
+                additionalProperties: false
+  /demoapi/status:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, uptime]
+                properties:
+                  status: {type: string, enum: [ok, degraded]}
+                  uptime: {type: integer}</pre>
+      </div>
+      <div class="col">
+        <h3>LIVE API — what it actually returns<span class="badge badge-real">reality</span></h3>
+        <pre>GET /demoapi/users/42  →  200
+{
+  "id": "42",              // string, not integer
+  "name": 123,             // number, not string
+  "role": "superadmin",    // not in [user, admin]
+  "extraField": true       // not in the spec
+}
+
+GET /demoapi/status     →  200
+{
+  "status": "down",        // not in [ok, degraded]
+  "uptime": "two days"     // string, not integer
+}</pre>
+      </div>
+    </div>
+
+    <div class="run">
+      <button class="btn btn-primary" id="run">Run drift check against the live API</button>
+      <span class="hint">Probes the demo API in real time and validates each response against the spec.</span>
+    </div>
+
+    <div class="results" id="results"></div>
+
+    <div class="why">
+      <p><b>Why a spec-diff tool can't see this.</b> Every finding above comes from comparing a <i>live response</i> to the spec — the spec alone never changed, so <code>diff old.yaml new.yaml</code> would report <b>zero</b> drift. That's the gap DriftWire fills: <code>driftwire check openapi.yaml --url https://your-api.example.com</code>.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Run it yourself in CI: <a href="https://github.com/Haswell119/driftwire">install the CLI</a> or add the <a href="https://github.com/Haswell119/driftwire">GitHub Action</a>. <a href="https://driftwire.onrender.com/">DriftWire Pro ($29 one-time)</a> adds HTML reports + <code>.driftwire.yml</code> waivers. <a href="demo.html">See the spec-vs-spec diff demo →</a> · <a href="index.html">← Back to DriftWire</a></p>
+  </div>
+</footer>
+
+<script>
+const API = "https://driftwire.onrender.com/api/demo-check";
+const runBtn = document.getElementById("run");
+const results = document.getElementById("results");
+
+function render(data) {
+  if (!data.findings || data.findings.length === 0) {
+    results.innerHTML = '<h2><span class="count-ok">✓ No drift detected</span></h2>';
+    return;
+  }
+  const high = new Set(["type_mismatch","missing_required","enum_violation","undocumented_field","probe_error"]);
+  let html = '<h2><span class="count-bad">' + data.count + ' drift finding' + (data.count === 1 ? "" : "s") + ' found</span>'
+    + ' <span class="hint">(' + data.probed + ' of ' + data.endpoints + ' endpoints probed)</span></h2>';
+  for (const f of data.findings) {
+    const isHigh = high.has(f.type);
+    html += '<div class="finding' + (isHigh ? ' high' : '') + '">'
+      + '<div class="type">' + f.type.replace(/_/g, ' ') + '</div>'
+      + '<div class="path">' + (f.path || '') + '</div>'
+      + '<div class="msg">' + (f.message || '') + '</div></div>';
+  }
+  results.innerHTML = html;
+}
+
+async function run() {
+  runBtn.disabled = true;
+  results.innerHTML = '<p class="hint">Probing the demo API and validating against the spec…</p>';
+  try {
+    const resp = await fetch(API, {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
+    const data = await resp.json();
+    if (!resp.ok) {
+      results.innerHTML = '<div class="error">' + (data.error || ("HTTP " + resp.status)) + '</div>';
+    } else {
+      render(data);
+    }
+  } catch (e) {
+    results.innerHTML = '<div class="error">Could not reach the demo server: ' + e.message + '</div>';
+  } finally {
+    runBtn.disabled = false;
+  }
+}
+
+runBtn.addEventListener("click", run);
+run(); // demonstrate value immediately on load
+</script>
+</body>
+</html>
