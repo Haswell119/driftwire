@@ -16,9 +16,15 @@ spec. DriftWire does both, in one zero-dependency CLI.
 ## Install
 
 ```bash
-pip install .            # from this repo
-# or
+# Recommended (single-file wheel, no build step):
+pip install "https://github.com/Haswell119/driftwire/releases/download/v0.2.0/driftwire-0.2.0-py3-none-any.whl"
+
+# From source:
 pip install git+https://github.com/Haswell119/driftwire.git
+
+# macOS (Homebrew):
+brew tap haswell119/driftwire
+brew install driftwire
 ```
 
 Requires Python 3.9+. Only dependency: PyYAML (for YAML specs). The Pro license
