@@ -87,7 +87,15 @@
 <section>
   <div class="wrap">
     <h2>Install</h2>
-    <pre><code>pip install git+https://github.com/Haswell119/driftwire.git
+    <pre><code># single-file wheel (no build step)
+pip install "https://github.com/Haswell119/driftwire/releases/download/v0.2.0/driftwire-0.2.0-py3-none-any.whl"
+
+# or from source
+pip install git+https://github.com/Haswell119/driftwire.git
+
+# macOS (Homebrew)
+brew tap haswell119/driftwire
+brew install driftwire
 # Python 3.9+. Only dependency: PyYAML.</code></pre>
     <h2>Use it as a CI gate</h2>
     <pre><code># catch breaking changes on every PR
